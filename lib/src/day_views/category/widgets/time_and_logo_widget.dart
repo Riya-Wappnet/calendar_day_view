@@ -24,7 +24,7 @@ class TimeAndLogoWidget extends StatelessWidget {
                   constraints: BoxConstraints(
                     maxWidth: config.timeColumnWidth,
                     minWidth: config.timeColumnWidth,
-                    minHeight: config.rowHeight,
+                    minHeight: config.rowHeight/2,
                   ),
                   child: config.logo ??
                       Container(
