@@ -20,7 +20,7 @@ class CategoryTitleRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: config.headerDecoration,
-      constraints: BoxConstraints(minHeight: config.rowHeight),
+      constraints: BoxConstraints(minHeight: config.rowHeight/2),
       child: IntrinsicHeight(
         child: Row(
           children: [
@@ -29,7 +29,7 @@ class CategoryTitleRow extends StatelessWidget {
                   (category) => [
                     SizedBox(
                       width: tileWidth,
-                      height: config.rowHeight,
+                      height: config.rowHeight/2,
                       child: Center(
                         child: Text(
                           category.name,
