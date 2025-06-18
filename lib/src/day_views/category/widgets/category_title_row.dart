@@ -20,7 +20,7 @@ class CategoryTitleRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: config.headerDecoration,
-      constraints: BoxConstraints(minHeight: config.rowHeight/2),
+      constraints: BoxConstraints(minHeight: config.rowHeight / 2),
       child: IntrinsicHeight(
         child: Row(
           children: [
@@ -29,11 +29,13 @@ class CategoryTitleRow extends StatelessWidget {
                   (category) => [
                     SizedBox(
                       width: tileWidth,
-                      height: config.rowHeight/2,
+                      height: config.rowHeight / 2,
                       child: Center(
                         child: Text(
                           category.name,
-                          style: const TextStyle(fontWeight: FontWeight.bold,color:Color(0xFF333333)),
+                          style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF414042)),
                         ),
                       ),
                     ),
