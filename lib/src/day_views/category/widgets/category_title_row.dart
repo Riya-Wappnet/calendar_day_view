@@ -33,6 +33,7 @@ class CategoryTitleRow extends StatelessWidget {
                       child: Center(
                         child: Text(
                           category.name,
+                          textAlign: TextAlign.center,
                           style: const TextStyle(
                               fontWeight: FontWeight.bold,
                               color: Color(0xFF414042)),
