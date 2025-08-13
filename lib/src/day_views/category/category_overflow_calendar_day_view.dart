@@ -57,10 +57,56 @@ class CategoryOverflowCalendarDayView<T extends Object> extends StatefulWidget
 class _CategoryOverflowCalendarDayViewState<T extends Object>
     extends State<CategoryOverflowCalendarDayView<T>> {
   late ScrollController controller;
+  late ScrollController verticalController;
+
   @override
   void initState() {
     super.initState();
     controller = ScrollController();
+    verticalController = ScrollController();
+
+    // Scroll to current time after the widget is built
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      scrollToCurrentTime();
+    });
+  }
+
+  @override
+  void dispose() {
+    controller.dispose();
+    verticalController.dispose();
+    super.dispose();
+  }
+
+  void scrollToCurrentTime() {
+    final now = DateTime.now();
+    final startOfDay = DateTime(now.year, now.minute, now.day);
+    final minutesFromStart = now.difference(startOfDay).inMinutes;
+
+    // Find the closest time slot
+    final timeList = widget.config.timeList;
+    if (timeList.isNotEmpty) {
+      final firstTime = timeList.first;
+      final minutesFromFirst = now.difference(firstTime).inMinutes;
+
+      // Calculate the scroll position (each row has config.rowHeight height)
+      final scrollPosition = minutesFromFirst * widget.config.heightPerMin;
+
+      // Scroll to the current time with some offset to center it
+      final maxScrollExtent = verticalController.position.maxScrollExtent;
+      final targetPosition = (scrollPosition).clamp(0.0, maxScrollExtent);
+
+      verticalController.animateTo(
+        targetPosition,
+        duration: const Duration(milliseconds: 500),
+        curve: Curves.easeInOut,
+      );
+    }
+  }
+
+  /// Public method to scroll to current time
+  void goToCurrentTime() {
+    scrollToCurrentTime();
   }
 
   @override
@@ -101,14 +147,24 @@ class _CategoryOverflowCalendarDayViewState<T extends Object>
                               .toString()
                               .split(":")
                               .first),
-                          IconButton.filledTonal(
-                            onPressed: () => goNext(rowLength, totalWidth),
-                            icon: const Icon(Icons.arrow_right),
+                          Row(
+                            children: [
+                              IconButton.filledTonal(
+                                onPressed: () => goToCurrentTime(),
+                                icon: const Icon(Icons.access_time),
+                                tooltip: 'Go to current time',
+                              ),
+                              IconButton.filledTonal(
+                                onPressed: () => goNext(rowLength, totalWidth),
+                                icon: const Icon(Icons.arrow_right),
+                              ),
+                            ],
                           ),
                         ],
                       ),
                 Expanded(
                   child: SingleChildScrollView(
+                    controller: verticalController,
                     physics: const ClampingScrollPhysics(),
                     child: Row(
                       children: [
