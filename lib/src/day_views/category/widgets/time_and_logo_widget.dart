@@ -17,25 +17,6 @@ class TimeAndLogoWidget extends StatelessWidget {
       width: config.timeColumnWidth,
       child: Column(
         children: [
-          IntrinsicHeight(
-            child: Row(
-              children: [
-                ConstrainedBox(
-                  constraints: BoxConstraints(
-                    maxWidth: config.timeColumnWidth,
-                    minWidth: config.timeColumnWidth,
-                    minHeight: config.rowHeight/2,
-                  ),
-                  child: config.logo ??
-                      Container(
-                        decoration: config.headerDecoration,
-                      ),
-                ),
-                config.verticalDivider ?? const VerticalDivider(width: 0),
-              ],
-            ),
-          ),
-          config.horizontalDivider ?? const Divider(height: 0),
           ListView.separated(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),

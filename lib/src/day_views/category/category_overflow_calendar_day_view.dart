@@ -58,13 +58,14 @@ class _CategoryOverflowCalendarDayViewState<T extends Object>
     extends State<CategoryOverflowCalendarDayView<T>> {
   late ScrollController controller;
   late ScrollController verticalController;
+  late ScrollController headerController; // New controller for header
 
   @override
   void initState() {
     super.initState();
     controller = ScrollController();
     verticalController = ScrollController();
-
+    headerController = ScrollController();
     // Scroll to current time after the widget is built
     WidgetsBinding.instance.addPostFrameCallback((_) {
       scrollToCurrentTime();
@@ -75,13 +76,12 @@ class _CategoryOverflowCalendarDayViewState<T extends Object>
   void dispose() {
     controller.dispose();
     verticalController.dispose();
+    headerController.dispose();
     super.dispose();
   }
 
   void scrollToCurrentTime() {
     final now = DateTime.now();
-    final startOfDay = DateTime(now.year, now.minute, now.day);
-    final minutesFromStart = now.difference(startOfDay).inMinutes;
 
     // Find the closest time slot
     final timeList = widget.config.timeList;
@@ -130,38 +130,64 @@ class _CategoryOverflowCalendarDayViewState<T extends Object>
                 ScrollConfiguration.of(context).copyWith(scrollbars: false),
             child: Column(
               children: [
-                (widget.controlBarBuilder != null)
-                    ? widget.controlBarBuilder!(
-                        () => goBack(rowLength, totalWidth),
-                        () => goNext(rowLength, totalWidth),
-                      )
-                    : Row(
-                        mainAxisSize: MainAxisSize.max,
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          IconButton.filledTonal(
-                            onPressed: () => goBack(rowLength, totalWidth),
-                            icon: const Icon(Icons.arrow_left),
-                          ),
-                          Text(widget.config.currentDate
-                              .toString()
-                              .split(":")
-                              .first),
-                          Row(
-                            children: [
-                              IconButton.filledTonal(
-                                onPressed: () => goToCurrentTime(),
-                                icon: const Icon(Icons.access_time),
-                                tooltip: 'Go to current time',
+                Row(
+                  children: [
+                    SizedBox(
+                      width: widget.config.timeColumnWidth,
+                      child: IntrinsicHeight(
+                        child: Row(
+                          children: [
+                            ConstrainedBox(
+                              constraints: BoxConstraints(
+                                maxWidth: widget.config.timeColumnWidth,
+                                minWidth: widget.config.timeColumnWidth,
+                                minHeight: widget.config.rowHeight / 2,
                               ),
-                              IconButton.filledTonal(
-                                onPressed: () => goNext(rowLength, totalWidth),
-                                icon: const Icon(Icons.arrow_right),
-                              ),
-                            ],
-                          ),
-                        ],
+                              child: widget.config.logo ??
+                                  Container(
+                                    decoration: widget.config.headerDecoration,
+                                  ),
+                            ),
+                          ],
+                        ),
                       ),
+                    ),
+                    Expanded(
+                      child: ClipPath(
+                        clipper: VerticalClipper(),
+                        child: NotificationListener<ScrollNotification>(
+                          onNotification: (ScrollNotification notification) {
+                            if (notification is ScrollUpdateNotification &&
+                                notification.metrics.axis == Axis.horizontal) {
+                              // Sync the main content scroll position with header
+                              if (controller.hasClients &&
+                                  (controller.offset !=
+                                      notification.metrics.pixels)) {
+                                controller.jumpTo(notification.metrics.pixels);
+                              }
+                            }
+                            return false;
+                          },
+                          child: SingleChildScrollView(
+                            // Use a separate controller for the header
+                            controller: headerController,
+                            clipBehavior: Clip.none,
+                            scrollDirection: Axis.horizontal,
+                            child: SizedBox(
+                              width: totalWidth,
+                              child: CategoryTitleRow(
+                                tileWidth: tileWidth,
+                                categories: widget.categories,
+                                config: widget.config,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    )
+                  ],
+                ),
+                widget.config.horizontalDivider ?? const Divider(height: 0),
                 Expanded(
                   child: SingleChildScrollView(
                     controller: verticalController,
@@ -174,41 +200,48 @@ class _CategoryOverflowCalendarDayViewState<T extends Object>
                         Expanded(
                           child: ClipPath(
                             clipper: VerticalClipper(),
-                            child: SingleChildScrollView(
-                              controller: controller,
-                              clipBehavior: Clip.none,
-                              scrollDirection: Axis.horizontal,
-                              physics: const ClampingScrollPhysics(),
-                              // physics: const NeverScrollableScrollPhysics(),
-                              child: SizedBox(
-                                width: totalWidth,
-                                child: Stack(
-                                  clipBehavior: Clip.none,
-                                  children: [
-                                    Column(
-                                      children: [
-                                        widget.config.horizontalDivider ??
-                                            const Divider(height: 0),
-                                        CategoryTitleRow(
-                                          tileWidth: tileWidth,
-                                          categories: widget.categories,
-                                          config: widget.config,
-                                        ),
-                                        widget.config.horizontalDivider ??
-                                            const Divider(height: 0),
-                                        _DayViewBody(
-                                          tileWidth: tileWidth,
-                                          rowBuilder:
-                                              widget.backgroundTimeTileBuilder,
-                                          events: widget.events,
-                                          categories: widget.categories,
-                                          eventBuilder: widget.eventBuilder,
-                                          onTileTap: widget.onTileTap,
-                                          config: widget.config,
-                                        ),
-                                      ],
-                                    ),
-                                  ],
+                            child: NotificationListener<ScrollNotification>(
+                              onNotification:
+                                  (ScrollNotification notification) {
+                                if (notification is ScrollUpdateNotification &&
+                                    notification.metrics.axis ==
+                                        Axis.horizontal) {
+                                  // Sync the header scroll position with main content
+                                  if (headerController.hasClients &&
+                                      (headerController.offset !=
+                                          notification.metrics.pixels)) {
+                                    headerController
+                                        .jumpTo(notification.metrics.pixels);
+                                  }
+                                }
+                                return false;
+                              },
+                              child: SingleChildScrollView(
+                                controller: controller,
+                                clipBehavior: Clip.none,
+                                scrollDirection: Axis.horizontal,
+                                physics: const ClampingScrollPhysics(),
+                                child: SizedBox(
+                                  width: totalWidth,
+                                  child: Stack(
+                                    clipBehavior: Clip.none,
+                                    children: [
+                                      Column(
+                                        children: [
+                                          _DayViewBody(
+                                            tileWidth: tileWidth,
+                                            rowBuilder: widget
+                                                .backgroundTimeTileBuilder,
+                                            events: widget.events,
+                                            categories: widget.categories,
+                                            eventBuilder: widget.eventBuilder,
+                                            onTileTap: widget.onTileTap,
+                                            config: widget.config,
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ),
                             ),
